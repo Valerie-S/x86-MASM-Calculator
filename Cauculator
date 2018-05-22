@@ -1,0 +1,155 @@
+INCLUDE Irvine32.inc		; //the program includes the Irvine32 library
+
+.data
+useroption      DWORD ? ; //the choice of the user
+firstNumber     DWORD ? ; //the first operand
+secondNumber    DWORD ? ; //the second operand
+result          DWORD ? ; //result of the calculation
+
+
+; instructions displayed on the screen
+lineMenu    BYTE    "This is a simple calculator,input number to chose function", 0dh, 0ah	; //multiple lines of menu
+BYTE    "           1.add function", 0dh, 0ah
+BYTE    "           2.sub function", 0dh, 0ah
+BYTE    "           3.mul function", 0dh, 0ah
+BYTE    "           4.div function", 0dh, 0ah
+
+
+; //all the strings that will be printed on the screen
+welcome     BYTE    "Welcome!", 0		; //print a welcome message
+chosefunc   BYTE    "Please input your function number:", 0
+string1     BYTE    "Please input the first number:", 0
+string2     BYTE    "Please input the second number:", 0
+farewellmsg BYTE    "Thank you use my program", 0
+diverrormsg BYTE    "Your second number is zero!", 0
+
+; operate message
+addResultMsg        BYTE    "Your result:", 0
+
+
+.stack 100; the number of bytes for the stack
+
+savereg MACRO; //save the macro
+push eax
+push ebx
+push ecx
+push edx
+push esi
+push edi
+ENDM
+
+returnreg MACRO; //restore the macro
+pop edi
+pop esi
+pop edx
+pop ecx
+pop ebx
+pop eax
+ENDM
+
+.code
+main PROC
+
+; WriteString uses edx as the register and it ends with 0
+mov     edx, OFFSET welcome		; //print the message named welcome
+call    WriteString		; //output to the console
+call    CrLf		; //System.out.println()
+jmp     displaymenustart
+
+
+displaymenustart :
+call    displayMenu
+
+chosefunction :
+mov     edx, OFFSET chosefunc		; //choose which operation you want
+call    WriteString		; //input the number ti choose the operation
+call    ReadInt		; //read your input as a integer
+jmp     inputnumber		; //if there is no other condition, jump directly to next step:inputing the first operand
+
+
+inputnumber :
+mov     useroption, eax
+mov     edx, OFFSET string1		; //get the location of string2 from edx and print it in the console
+call    WriteString
+call    ReadInt		; //read the input as a integer and store the value in the exa register
+mov     firstNumber, eax
+mov     edx, OFFSET string2		; //get the location of string2 from edx and print it in the console
+call    WriteString		; //calling the input function
+call    ReadInt		; //read the input as a integer and store the value in the exa register
+mov     secondNumber, eax
+mov     eax, useroption
+cmp     eax, 1		; //if input is 1
+je      plus		; //choose the plus function
+cmp     eax, 2		; //if input is 2
+je      subtract		; //call the subtract function
+cmp     eax, 3		; //if input is 3
+je      multi		; //call the multiply function
+cmp     eax, 4		; //if nput is 4
+je      divide		; //call the devide function
+
+plus :
+mov     eax, firstNumber		; //store the first number and store in eax
+add     eax, secondNumber		; //plus the value of second number
+jmp     displayResult			; // call the displayresult function
+
+subtract :
+mov     eax, firstNumber		; //store the first number and store in eax
+sub     eax, secondNumber		; //suntract the value of second number
+jmp     displayResult		; // call the displayresult function
+
+multi :
+mov     eax, secondNumber		; //store the second number in eax register
+imul    firstNumber		; //nultiply the first number by the second number and store the result in edx register
+jmp     displayResult		; // call the displayresult function
+
+divide :
+; //check if the second number is 0 before the calculation
+mov     eax, secondNumber		; //store the second number in eax register
+cmp     eax, 0		; //compare the second number with 0
+je      divError		; //if the number devided is zero, jump to divError function
+mov     edx, 0		; //make the value in edx register 0 before the calculation
+mov     eax, firstNumber		; //store the first number in eax
+idiv    secondNumber; //devide eax by edx, store the result in eax and the remainder in edx
+jmp     displayResult		; //display the result
+
+divError:		; //call this function when the number devided equals to 0
+mov     edx, OFFSET diverrormsg		; //print the error message
+call    WriteString		; //
+call    CrLf
+jmp     displaymenustart
+
+displayResult :
+mov     result, eax
+mov     edx, OFFSET addResultMsg
+call    WriteString
+call    WriteInt
+call    CrLf
+
+
+
+stop_run :
+mov     edx, OFFSET farewellmsg		; //print the farewellmsg
+call    WriteString		; //output
+call    CrLf		; //nextline
+call    WaitMsg		; //wait for the message to display, it's a methof in the library
+exit
+main ENDP
+
+
+displayMenu PROC
+; 使用时先进行压栈操作，最后进行出栈操作
+savereg
+
+mov     edx, OFFSET lineMenu
+call    WriteString		; //output to the console
+call    CrLf		; //nextline
+
+returnreg
+ret
+
+displayMenu ENDP
+
+
+
+exit
+end main
